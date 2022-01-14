@@ -21,6 +21,7 @@ def PID_controller(currentPos, targetPos):
 
 
 def get_direction(currentPos, targetPos):
+    print('GET DIRECTION')
     twist = Twist()
     twist.linear.x = 0
     twist.linear.y = 0
@@ -44,11 +45,11 @@ def get_direction(currentPos, targetPos):
 
     return(twist)
 
+
 def odom_callback(Odometry):
     currentPos.x = Odometry.x
     currentPos.y = Odometry.y
     currentPos.z = Odometry.z
-
 
 
 def on_target(currentPos, targetPos):
@@ -77,6 +78,7 @@ def move():
         print("Going to takeoff")
         pubTakeoff.publish()
 
+        print("Going to mooove")
         while not on_target:
             pubPilot.publish(get_direction(currentPos, targetPos))
 
