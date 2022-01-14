@@ -9,6 +9,7 @@ import time
 
 def alvar_callback(msg):
     for marker in msg.markers:
+        print("AR-TAG DETECTED !!!")
         print(marker.id)
 
 
