@@ -13,8 +13,7 @@ def alvar_callback(msg):
 
 
 rospy.init_node('test', anonymous=True)
-
 time.sleep(1)
-
 sub_alvar = rospy.Subscriber(
     "/ar_pose_marker", AlvarMarkers, alvar_callback, queue_size=1)
+rospy.spin()
