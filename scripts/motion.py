@@ -8,15 +8,15 @@ from nav_msgs.msg import Odometry
 #from bebop_msg.msg import CommonCommonStateWifiSignalChanged
 
 currentPos = {'x': 0, 'y': 0, 'z': 0}
-targetPos = {'x': 0.2, 'y': 0.2, 'z': 0.2}
+targetPos = {'x': 0, 'y': 0, 'z': 1}
 
 STRENGTH = 0.2
 WAYPOINT_SPHERE = 0.1
 
 """
 def PID_controller(currentPos, targetPos):
-    err_func = {x: targetPos.x - currentPos.x, y: targetPos.y
-                - currentPos.y, z: targetPos.z - currentPos.z}
+    err_func = {x: targetPos['x'] - currentPos['x'], y: targetPos['x']
+                - currentPos['y'], z: targetPos['z'] - currentPos['z']}
 """
 
 
@@ -28,17 +28,17 @@ def get_direction(currentPos, targetPos):
     twist.linear.z = 0
 
     if currentPos != targetPos:
-        if currentPos.x > targetPos.x:
+        if currentPos['x'] < targetPos['x']:
             twist.linear.x = STRENGTH
         else:
             twist.linear.x = - STRENGTH
 
-        if currentPos.y > targetPos.y:
+        if currentPos['y'] < targetPos['x']:
             twist.linear.y = STRENGTH
         else:
             twist.linear.y = - STRENGTH
 
-        if currentPos.z > targetPos.z:
+        if currentPos['z'] < targetPos['z']:
             twist.linear.z = STRENGTH
         else:
             twist.linear.z = - STRENGTH
@@ -47,19 +47,19 @@ def get_direction(currentPos, targetPos):
 
 
 def odom_callback(Odometry):
-    currentPos.x = Odometry.x
-    currentPos.y = Odometry.y
-    currentPos.z = Odometry.z
+    currentPos['x'] = Odometry.pose.pose.position.x
+    currentPos['y'] = Odometry.pose.pose.position.y
+    currentPos['z'] = Odometry.pose.pose.position.z
 
 
 def on_target(currentPos, targetPos):
-    if abs(currentPos.x-targetPos.x) >= WAYPOINT_SPHERE:
+    if abs(currentPos['x']-targetPos['x']) >= WAYPOINT_SPHERE:
         return False
 
-    elif abs(currentPos.y-targetPos.y) >= WAYPOINT_SPHERE:
+    elif abs(currentPos['y']-targetPos['x']) >= WAYPOINT_SPHERE:
         return False
 
-    elif abs(currentPos.z-targetPos.z) >= WAYPOINT_SPHERE:
+    elif abs(currentPos['z']-targetPos['z']) >= WAYPOINT_SPHERE:
         return False
     return True
 
@@ -69,21 +69,25 @@ def move():
     pubLand = rospy.Publisher('/bebop/land', Empty, queue_size=1)
     pubPilot = rospy.Publisher('/bebop/cmd_vel', Twist, queue_size=1)
 
-    rospy.Subscriber("odom", Odometry, odom_callback)
-
     rospy.init_node('motion', anonymous=True)
 
+    rospy.Subscriber("/bebop/odom", Odometry, odom_callback)
+
     if not rospy.is_shutdown():
-        time.sleep(1)
+        time.sleep(2)
         print("Going to takeoff")
         pubTakeoff.publish()
 
+        time.sleep(5)
         print("Going to mooove")
-        while not on_target:
+        while not on_target(currentPos, targetPos):
+            print('not on target')
             pubPilot.publish(get_direction(currentPos, targetPos))
 
+        print('on target')    
         print("Going to land")
         pubLand.publish()
+
 
 
 if __name__ == '__main__':
