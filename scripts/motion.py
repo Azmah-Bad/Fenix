@@ -3,6 +3,7 @@ import rospy
 import time
 from std_msgs.msg import Empty, UInt8
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 
 #from bebop_msg.msg import CommonCommonStateWifiSignalChanged
 
@@ -43,6 +44,12 @@ def get_direction(currentPos, targetPos):
 
     return(twist)
 
+def odom_callback(Odometry):
+    currentPos.x = Odometry.x
+    currentPos.y = Odometry.y
+    currentPos.z = Odometry.z
+
+
 
 def on_target(currentPos, targetPos):
     if abs(currentPos.x-targetPos.x) >= WAYPOINT_SPHERE:
@@ -60,6 +67,8 @@ def move():
     pubTakeoff = rospy.Publisher('/bebop/takeoff', Empty, queue_size=1)
     pubLand = rospy.Publisher('/bebop/land', Empty, queue_size=1)
     pubPilot = rospy.Publisher('/bebop/cmd_vel', Twist, queue_size=1)
+
+    rospy.Subscriber("odom", Odometry, odom_callback)
 
     rospy.init_node('motion', anonymous=True)
 
