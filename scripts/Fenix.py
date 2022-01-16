@@ -14,7 +14,7 @@ class Fenix():
     def __init__(self):
         #Faire tous les configurations
         self.speed = 0.1
-        self.land_initiated == False
+        self.land_initiated = False
         self.currentPos = {'x': 0, 'y': 0, 'z': 0}
         self.targetPos = {'x': 0, 'y': 0, 'z': 0.5}
 
@@ -22,7 +22,7 @@ class Fenix():
         rospy.loginfo("Fenix Running")
 
         #subscribers
-        rospy.Subscriber('/ar_pose_marker', AlvarMarkers, self.marker_callback)
+        rospy.Subscriber('/bebop/ar_pose_marker', AlvarMarkers, self.marker_callback)
         rospy.Subscriber("/bebop/odom", Odometry, self.odom_callback)
 
         #publishers
@@ -81,13 +81,14 @@ class Fenix():
         self.pub_cmd_vel.publish(vel_msg)
 
     def marker_callback(self, data):
-        if self.land_initiated:
-            if not data.markers.isempty():
+        if not self.land_initiated:
+            if data.markers is not None:
                 for marker in data.markers:
                     vel_msg = Twist()
 
                     p = marker.pose.pose.position
-                    print("tag: ", marker.id, "\nposition: ", p)
+                    print "\ntag:" , marker.id
+                    print "position:\n", p
                     #!!!just for testing
                     if marker.id == 4:
                         vel_msg.linear.x = (marker.pose.pose.position.x - self.targetPos['x']) * self.speed
@@ -105,9 +106,8 @@ class Fenix():
 if __name__ == '__main__':
     try:
         rospy.init_node('Fenix', anonymous=False)
-        # callback to handle commands/requests
-        Fenix()
-        
+        fenix = Fenix()
         rospy.spin()
+
     except rospy.ROSInterruptException:
         rospy.logerr("Fenix node terminated.")
