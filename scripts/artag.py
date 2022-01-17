@@ -8,7 +8,7 @@ AREA_DIMENSIONS = (
 INITIAL_POSITION = (290, 145, 0)
 
 AR_TAGS = {  # id: position of the ar tag
-    1: (0, 0, 0),
+    1: (310, 0, 140),
 }
 
 
@@ -21,12 +21,6 @@ def getPosition(artag_id_1, artag_d_1,
         res[coord_index] = AR_TAGS[artag_id_1][coord_index] * artag_d_1 + AR_TAGS[artag_id_2][coord_index] * artag_d_2 + AR_TAGS[artag_id_3][coord_index] * artag_d_3
         res[coord_index] = res[coord_index] / distance_sum
     return tuple(res)
-
-class Fenix:
-    def __init__(self):
-        pass
-
-    position = INITIAL_POSITION
 
 
 if __name__ == '__main__':
