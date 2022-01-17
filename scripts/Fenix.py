@@ -8,6 +8,21 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
 WAYPOINT_SPHERE = 0.1
+AR_TAGS = {  # id: position of the ar tag
+    0: (0, 0, 0),
+    1: (0, 0, 0),
+    2: (0, 0, 0),
+    3: (0, 0, 0),
+    4: (0, 0, 0),
+    5: (0, 0, 0),
+    6: (0, 0, 0),
+    7: (0, 0, 0),
+    8: (0, 0, 0),
+    9: (0, 0, 0),
+    10: (0, 0, 0),
+    11: (0, 0, 0),
+    12: (0, 0, 0),
+    }
 
 class Fenix():
     def __init__(self):
@@ -15,7 +30,7 @@ class Fenix():
         self.speed = 0.1
         self.land_initiated = False
         self.currentPos = {'x': 0, 'y': 0, 'z': 0}
-        self.targetPos = {'x': 0, 'y': 0, 'z': 0.5}
+        self.targetPos = {'x': 0, 'y': 1, 'z': 0}
 
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Fenix Running")
@@ -29,6 +44,8 @@ class Fenix():
         self.pub_land = rospy.Publisher('bebop/land', Empty, queue_size=1)
         self.pub_cmd_vel = rospy.Publisher('bebop/cmd_vel', Twist, queue_size=1)
 
+        self.takeoff()
+        #self.move()
 
     def shutdown(self):
         rospy.loginfo("Shutting down Fenix node.")
@@ -81,24 +98,38 @@ class Fenix():
 
     def marker_callback(self, data):
         if not self.land_initiated:
-            if data.markers is not None:
+            if len(data.markers) > 0:
+                print "111"
+                vel_msg = Twist()
+
                 for marker in data.markers:
-                    vel_msg = Twist()
 
                     p = marker.pose.pose.position
                     print "\ntag:" , marker.id
                     print "position:\n", p
-                    #!!!just for testing
-                    if marker.id == 4:
-                        vel_msg.linear.x = (marker.pose.pose.position.x - self.targetPos['x']) * self.speed
-                        vel_msg.linear.y = - (marker.pose.pose.position.y - self.targetPos['y']) * self.speed
-                        vel_msg.linear.z = - (marker.pose.pose.position.z - self.targetPos['z']) * self.speed
+                    
+                    artag_id = marker.id
+                    self.currentPos['x'] += AR_TAGS[artag_id][0] - marker.pose.pose.position.x
+                    self.currentPos['y'] += AR_TAGS[artag_id][1] - marker.pose.pose.position.y
+                    self.currentPos['z'] += AR_TAGS[artag_id][2] - marker.pose.pose.position.z
 
-                        self.pub_cmd_vel.publish(vel_msg)
+                for key in self.currentPos:
+                    self.currentPos[key] = self.currentPos[key]/len(data.markers)
+
+                print "Current position: ", self.currentPos
+
+                #!!!just for testing
+                vel_msg.linear.x = (self.targetPos['x'] - self.currentPos['x']) * self.speed
+                vel_msg.linear.y = (self.targetPos['y'] - self.currentPos['y']) * self.speed
+                vel_msg.linear.z = (self.targetPos['z'] - self.currentPos['z']) * self.speed
+
+                # self.pub_cmd_vel.publish(vel_msg)
 
 
     def odom_callback(self, data):
         pass
+
+
 
 
 
