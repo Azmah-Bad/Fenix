@@ -9,19 +9,19 @@ from nav_msgs.msg import Odometry
 
 WAYPOINT_SPHERE = 0.1
 AR_TAGS = {  # id: position of the ar tag
-    0: (0, 0, 0),
-    1: (0, 0, 0),
-    2: (0, 0, 0),
-    3: (0, 0, 0),
-    4: (0, 0, 0),
-    5: (0, 0, 0),
-    6: (0, 0, 0),
-    7: (0, 0, 0),
-    8: (0, 0, 0),
-    9: (0, 0, 0),
-    10: (0, 0, 0),
-    11: (0, 0, 0),
-    12: (0, 0, 0),
+    0: (2.52, 1.4, 3.1),
+    1: (1.68, 1.47, 3.1),
+    2: (2.1, 1.66, 3.1),
+    3: (3.12, 1.17, 3.1),
+    4: (3.6, 0.8, 3.1),
+    5: (2.0, 0.87, 3.1),
+    6: (1.23, 1.75, 3.1),
+    7: (0.8, 1.25, 3.1),
+    8: (0.25, 1.85, 3.1),
+    9: (4.0, 1.82, 3.1),
+    10: (4.44, 1.35, 3.1),
+    11: (4.83, 1.96, 3.1),
+    12: (5.12, 1.05, 3.1),
     }
 
 class Fenix():
@@ -30,7 +30,7 @@ class Fenix():
         self.speed = 0.1
         self.land_initiated = False
         self.currentPos = {'x': 0, 'y': 0, 'z': 0}
-        self.targetPos = {'x': 0, 'y': 1, 'z': 0}
+        self.targetPos = {'x': 0, 'y': 0, 'z': 2.5}
 
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Fenix Running")
@@ -44,7 +44,7 @@ class Fenix():
         self.pub_land = rospy.Publisher('bebop/land', Empty, queue_size=1)
         self.pub_cmd_vel = rospy.Publisher('bebop/cmd_vel', Twist, queue_size=1)
 
-        self.takeoff()
+        self.land()
         #self.move()
 
     def shutdown(self):
@@ -97,9 +97,9 @@ class Fenix():
         self.pub_cmd_vel.publish(vel_msg)
 
     def marker_callback(self, data):
+        self.currentPos['x'] = self.currentPos['y'] = self.currentPos['z'] = 0
         if not self.land_initiated:
             if len(data.markers) > 0:
-                print "111"
                 vel_msg = Twist()
 
                 for marker in data.markers:
@@ -119,17 +119,15 @@ class Fenix():
                 print "Current position: ", self.currentPos
 
                 #!!!just for testing
-                vel_msg.linear.x = (self.targetPos['x'] - self.currentPos['x']) * self.speed
-                vel_msg.linear.y = (self.targetPos['y'] - self.currentPos['y']) * self.speed
+                #vel_msg.linear.x = (self.targetPos['x'] - self.currentPos['x']) * self.speed
+                #vel_msg.linear.y = (self.targetPos['y'] - self.currentPos['y']) * self.speed
                 vel_msg.linear.z = (self.targetPos['z'] - self.currentPos['z']) * self.speed
 
-                # self.pub_cmd_vel.publish(vel_msg)
+                self.pub_cmd_vel.publish(vel_msg)
 
 
     def odom_callback(self, data):
         pass
-
-
 
 
 
