@@ -3,13 +3,12 @@ import rospy
 from std_msgs.msg import Empty
 from ar_track_alvar_msgs.msg import AlvarMarkers
 
-
 import time
 
 
 def alvar_callback(msg):
     for marker in msg.markers:
-        
+        pass
 
 
 rospy.init_node('test', anonymous=True)

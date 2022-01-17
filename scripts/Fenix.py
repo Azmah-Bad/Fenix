@@ -24,9 +24,10 @@ AR_TAGS = {  # id: position of the ar tag
     12: (0, 0, 0),
     }
 
-class Fenix():
+
+class Fenix:
     def __init__(self):
-        #Faire tous les configurations
+        # Faire tous les configurations
         self.speed = 0.1
         self.land_initiated = False
         self.currentPos = {'x': 0, 'y': 0, 'z': 0}
@@ -35,47 +36,51 @@ class Fenix():
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Fenix Running")
 
-        #subscribers
+        # subscribers
         rospy.Subscriber('/bebop/ar_pose_marker', AlvarMarkers, self.marker_callback)
         rospy.Subscriber("/bebop/odom", Odometry, self.odom_callback)
 
-        #publishers
+        # publishers
         self.pub_takeoff = rospy.Publisher('bebop/takeoff', Empty, queue_size=1)
         self.pub_land = rospy.Publisher('bebop/land', Empty, queue_size=1)
         self.pub_cmd_vel = rospy.Publisher('bebop/cmd_vel', Twist, queue_size=1)
 
         self.takeoff()
         #self.move()
+        self.odom_data = []
 
     def shutdown(self):
-        rospy.loginfo("Shutting down Fenix node.")
+        rospy.loginfo("Shutting down Fenix node...")
         land = Empty()
         self.pub_land.publish(land)
         rospy.sleep(1)
+        rospy.loginfo("Landing completed.")
 
     # takeoff
     def takeoff(self):
         takeoff = Empty()
-        rospy.loginfo("Going to takeoff.")
+        rospy.loginfo("Going to takeoff...")
         rospy.sleep(1)
         self.pub_takeoff.publish(takeoff)
         rospy.sleep(2)
+        rospy.loginfo("Takeoff completed !")
 
-    # landing intiation
+    # landing initiation
     def land(self):
-        if self.land_initiated == False:
+        if not self.land_initiated:
             self.land_initiated = True
-            rospy.loginfo("Initiating Landing Sequence.")
+            rospy.loginfo("Initiating landing sequence...")
             self.pub_land.publish(land)
+            rospy.loginfo("Landing completed !")
 
     def move(self):
         # testing only.  Simply moves forward turns around
         vel_msg = Twist()
         vel_msg.linear.x = self.speed
-        
+
         # move forward for 1 seconds
         seconds = 0.0
-        while(seconds < 1):
+        while seconds < 1:
             self.pub_cmd_vel.publish(vel_msg)
             rospy.sleep(0.1)
             seconds += 0.1
@@ -86,7 +91,7 @@ class Fenix():
         vel_msg.angular.z = 0.1
 
         seconds = 0.0
-        while(seconds < 1):
+        while seconds < 1:
             self.pub_cmd_vel.publish(vel_msg)
             rospy.sleep(0.1)
             seconds += 0.1
@@ -105,9 +110,9 @@ class Fenix():
                 for marker in data.markers:
 
                     p = marker.pose.pose.position
-                    print "\ntag:" , marker.id
+                    print "\ntag:", marker.id
                     print "position:\n", p
-                    
+
                     artag_id = marker.id
                     self.currentPos['x'] += AR_TAGS[artag_id][0] - marker.pose.pose.position.x
                     self.currentPos['y'] += AR_TAGS[artag_id][1] - marker.pose.pose.position.y
@@ -125,12 +130,8 @@ class Fenix():
 
                 # self.pub_cmd_vel.publish(vel_msg)
 
-
     def odom_callback(self, data):
         pass
-
-
-
 
 
 if __name__ == '__main__':
