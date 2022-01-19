@@ -28,10 +28,11 @@ AR_TAGS = {  # id: position of the ar tag
 class Fenix:
     def __init__(self):
         # Faire tous les configurations
-        self.speed = 0.1
+        self.speed = 0.05
         self.land_initiated = False
         self.currentPos = {'x': 0, 'y': 0, 'z': 0}
-        self.targetPos = {'x': 0, 'y': 0, 'z': 2.5}
+        self.targetPos = {'x': 0, 'y': 0, 'z': 2.1}
+        self.state = "land"
 
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Fenix Running")
@@ -45,7 +46,7 @@ class Fenix:
         self.pub_land = rospy.Publisher('bebop/land', Empty, queue_size=1)
         self.pub_cmd_vel = rospy.Publisher('bebop/cmd_vel', Twist, queue_size=1)
 
-        self.land()
+        self.takeoff()
         #self.move()
         self.odom_data = []
 
@@ -62,7 +63,8 @@ class Fenix:
         rospy.loginfo("Going to takeoff...")
         rospy.sleep(1)
         self.pub_takeoff.publish(takeoff)
-        rospy.sleep(2)
+        rospy.sleep(5)
+        self.state = "takeoff"
         rospy.loginfo("Takeoff completed !")
 
     # landing initiation
@@ -71,7 +73,9 @@ class Fenix:
             self.land_initiated = True
             rospy.loginfo("Initiating landing sequence...")
             self.pub_land.publish(land)
+            self.state = "land"
             rospy.loginfo("Landing completed !")
+
 
     def move(self):
         # testing only.  Simply moves forward turns around
@@ -101,35 +105,58 @@ class Fenix:
 
         self.pub_cmd_vel.publish(vel_msg)
 
+    def on_target(self):
+        
+        if abs(self.currentPos['z']-self.targetPos['z']) >= WAYPOINT_SPHERE:
+            return False
+
+        #elif abs(self.currentPos['y']-self.targetPos['x']) >= WAYPOINT_SPHERE:
+        #    return False
+        
+
+        #if abs(self.currentPos['z']-self.targetPos['z']) >= WAYPOINT_SPHERE:
+        #   return False
+        return True
+
     def marker_callback(self, data):
-        self.currentPos['x'] = self.currentPos['y'] = self.currentPos['z'] = 0
-        if not self.land_initiated:
-            if len(data.markers) > 0:
-                vel_msg = Twist()
+        if self.state == "takeoff":
+            if not self.land_initiated:
+                if len(data.markers) > 0:
+                    vel_msg = Twist()
 
-                for marker in data.markers:
+                    for marker in data.markers:
 
-                    p = marker.pose.pose.position
-                    print "\ntag:", marker.id
-                    print "position:\n", p
+                        p = marker.pose.pose.position
+                        print "\ntag:", marker.id
+                        print "position:\n", p
 
-                    artag_id = marker.id
-                    self.currentPos['x'] += AR_TAGS[artag_id][0] - marker.pose.pose.position.x
-                    self.currentPos['y'] += AR_TAGS[artag_id][1] - marker.pose.pose.position.y
-                    self.currentPos['z'] += AR_TAGS[artag_id][2] - marker.pose.pose.position.z
+                        artag_id = marker.id
+                        self.currentPos['x'] += AR_TAGS[artag_id][0] - marker.pose.pose.position.x
+                        self.currentPos['y'] += AR_TAGS[artag_id][1] - marker.pose.pose.position.y
+                        self.currentPos['z'] += AR_TAGS[artag_id][2] - marker.pose.pose.position.z*1.2
+                        print self.currentPos['z']    
 
-                for key in self.currentPos:
-                    self.currentPos[key] = self.currentPos[key]/len(data.markers)
+                    for key in self.currentPos:
+                        self.currentPos[key] = self.currentPos[key]/len(data.markers)
+                        print(self.currentPos[key])
 
-                print "Current position: ", self.currentPos
+                    print "Current position: ", self.currentPos
 
-                #!!!just for testing
-                #vel_msg.linear.x = (self.targetPos['x'] - self.currentPos['x']) * self.speed
-                #vel_msg.linear.y = (self.targetPos['y'] - self.currentPos['y']) * self.speed
-                vel_msg.linear.z = (self.targetPos['z'] - self.currentPos['z']) * self.speed
+                    
+                    #!!!just for testing
+                    if not self.on_target():
+                        
+                        #vel_msg.linear.x = (self.targetPos['x'] - self.currentPos['x']) * self.speed
+                        #vel_msg.linear.y = (self.targetPos['y'] - self.currentPos['y']) * self.speed
+                        vel_msg.linear.x = (self.targetPos['z'] - self.currentPos['z'])/abs(self.targetPos['z'] - self.currentPos['z'])*self.speed
+                        print("going to target")
+                    else:
+                        vel_msg.linear.x = vel_msg.linear.y = vel_msg.linear.z = 0
 
-                self.pub_cmd_vel.publish(vel_msg)
-
+                    self.pub_cmd_vel.publish(vel_msg)
+                    self.currentPos['x'] = self.currentPos['y'] = self.currentPos['z'] = 0
+                    #rospy.sleep(1)
+                    
     def odom_callback(self, data):
         pass
 
